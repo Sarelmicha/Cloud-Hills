@@ -11,21 +11,25 @@ public class Train : MonoBehaviour
     [SerializeField] Station[] stations = null;
     [SerializeField] Door[] doors = null;
     [SerializeField] GameObject[] cells = null;
+    
 
     [SerializeField] VoidEvent onTrainStopped = null;
     [SerializeField] VoidEvent onTrainStartDrive = null;
 
     [SerializeField] GameObject passengers = null;
+    [SerializeField] PersonCounter personCounter = null;
 
 
     private bool isBreaksOn = false;
     private float trainSpeed;
     private bool isStoped = false;
     private int currentStationIndex = -1;
+    private Vector3 startPosition;
 
 
     private void Awake()
     {
+        startPosition = transform.position;
         SetTrainSpeed(speed);
     }
 
@@ -48,6 +52,11 @@ public class Train : MonoBehaviour
     private void Drive(float breakSpeed)
     {
         transform.position +=  Vector3.forward  * Time.deltaTime * trainSpeed * breakSpeed;
+
+        if (transform.position.z >= Terrain.activeTerrain.terrainData.size.z)
+        {
+            transform.position = startPosition;
+        }
        
     }
 
@@ -60,17 +69,24 @@ public class Train : MonoBehaviour
 
         else if (other.tag == "Stop Point" && !isStoped)
         {
-            print("im here shtrudel");
             SetTrainSpeed(0);
             OpenDoors();
-            print("currentStationIndex before inc" + currentStationIndex);
             currentStationIndex++;
-            print("currentStationIndex after inc" + currentStationIndex);
+
+            personCounter.SetMaxNumOfPassengersInTrain(GetNumberOfPassengersInStation());
+
 
 
             if (currentStationIndex == stations.Length)
             {
                 currentStationIndex = 0;
+            }
+
+            if (!isPassengersInStation() && !isPassengersInTrain())
+            {
+                isStoped = true;
+                StartCoroutine(Drive());
+                return;                  
             }
 
 
@@ -80,6 +96,50 @@ public class Train : MonoBehaviour
 
             isStoped = true;
         }
+    }
+
+    private bool isPassengersInTrain()
+    {
+        for (int i = 0; i < passengers.transform.childCount; i++)
+        {
+            Person passenger = passengers.transform.GetChild(i).GetComponent<Person>();
+            if (passenger.InTrain())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool isPassengersInStation()
+    {
+        for (int i = 0; i < passengers.transform.childCount; i++)
+        {
+            Person passenger = passengers.transform.GetChild(i).GetComponent<Person>();
+            if (passenger.GetCurrentStation().GetStationIndex() == currentStationIndex)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public int GetNumberOfPassengersInStation()
+    {
+        int count = 0;
+
+        for (int i = 0; i < passengers.transform.childCount; i++)
+        {
+            Person passenger = passengers.transform.GetChild(i).GetComponent<Person>();
+            if (passenger.GetCurrentStation().GetStationIndex() == currentStationIndex)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private void ActivatePassengers()
@@ -110,6 +170,7 @@ public class Train : MonoBehaviour
 
     public IEnumerator Drive()
     {
+        yield return new WaitForSeconds(2f);
         isBreaksOn = false;
         SetTrainSpeed(speed);
         yield return new WaitForSeconds(3f);
@@ -139,11 +200,13 @@ public class Train : MonoBehaviour
 
     public Station GetCurrentStations()
     {
-        print("currentStationIndex is " + currentStationIndex);
         return this.stations[currentStationIndex];
     }
 
-
-
+    public void SetSpeed()
+    {
+        this.speed = 8;
+        trainSpeed = speed;
+    } 
 
 }

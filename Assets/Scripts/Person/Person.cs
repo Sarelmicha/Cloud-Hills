@@ -7,12 +7,14 @@ public class Person : MonoBehaviour
 {
 
     [SerializeField] Train train = null;
-
+    [SerializeField] private Station currentStation = null;
 
     private NavMeshAgent navMesh = null;
     private Animator anim = null;
 
-    private int currentCellIndex;
+    
+    private int currentCellIndex = 0;
+
     private bool inTrain = false;
 
     private void Awake()
@@ -23,17 +25,16 @@ public class Person : MonoBehaviour
 
     private void Update()
     {
-       
-        if (navMesh.destination == transform.position)
-        {
-            return;
-        }
 
-        if (inTrain)
-        {          
-            anim.SetTrigger("idle");
-            print("im in destiniation");
-           
+        if (!navMesh.pathPending)
+        {
+            if (navMesh.remainingDistance <= navMesh.stoppingDistance)
+            {
+                if (!navMesh.hasPath || navMesh.velocity.sqrMagnitude == 0f)
+                {
+                   //TriggerIdleAnimation();
+                }
+            }
         }
     }
 
@@ -56,18 +57,20 @@ public class Person : MonoBehaviour
         print("lets walk");
         currentCellIndex = train.GetRandomCellIndex();
         SetDestination(train.GetCellPosition(currentCellIndex));
-        anim.SetTrigger("walk");
+        
     }
 
     private void ExitTrain()
     {
-        print("im here!");
 
         //set passenger positon to cell position
         SetPosition(train.GetCellPosition(currentCellIndex));
 
         //Set new destination of passenger in station
-        SetDestination(train.GetCurrentStations().GetRadomPositionInStation());       
+        currentStation = train.GetCurrentStations(); 
+        
+        //Set destination of a random spot in new station
+        SetDestination(currentStation.GetRadomPositionInStation());       
 
     }
 
@@ -85,6 +88,7 @@ public class Person : MonoBehaviour
 
     public void SetDestination(Vector3 destination)
     {
+        TriggerWalkAnimatiom();
         navMesh.destination = destination;
     }
 
@@ -97,5 +101,21 @@ public class Person : MonoBehaviour
     public int GetCurrentCellIndex()
     {
         return this.currentCellIndex;
+    }
+
+    public Station GetCurrentStation()
+    {
+        return this.currentStation;
+    }
+
+    public void TriggerWalkAnimatiom()
+    {
+        anim.SetTrigger("walk");
+    }
+
+    public void TriggerIdleAnimation()
+    {
+        anim.SetTrigger("idle");
+
     }
 }
