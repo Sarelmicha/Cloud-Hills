@@ -10,20 +10,17 @@ public class Door : MonoBehaviour
     {
         anim = GetComponent<Animator>();
     }
+ 
 
-    private void OnTriggerEnter(Collider other)
+    public void OpenDoor()
     {
-        if (other.tag == "Person")
-        {
-            anim.SetTrigger("open");
-        }
+      
+        anim.SetTrigger("open");
+        
     }
 
-    private void OnTriggerExit(Collider other)
+    public void CloseDoor()
     {
-        if (other.tag == "Person")
-        {
-            anim.SetTrigger("close");
-        }
+        anim.SetTrigger("close");
     }
 }
